@@ -7,10 +7,10 @@ import os
 import numpy
 from google.oauth2 import service_account
 
-credentials = service_account.Credentials.from_service_account_file(
-    "/fabled-sorter-289010-9aef64e16ce3.json")
-os.environ[
-    "GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/leonidparubets/PycharmProjects/Careerist/fabled-sorter-289010-9aef64e16ce3.json"
+credentials = service_account.Credentials.from_service_account_file \
+    ("/Users/leonidparubets/PycharmProjects/Careerist/fabled-sorter-289010-9aef64e16ce3.json")
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = \
+    "/Users/leonidparubets/PycharmProjects/Careerist/fabled-sorter-289010-9aef64e16ce3.json"
 
 headers = {
     'Api-Key': 'omRofLaicCGhMs93337TaMd1lZgukrPY',
@@ -40,7 +40,7 @@ df = df.assign(event_type=[*map(lambda x: 'lesson' if 'FL' in x else 'webinar', 
 def dictionary(condition):
     result = {}
     for i in df.date_id[:]:
-        res = requests.get('https://my.demio.com/api/v1/report/' + str(i) + '/participants?status=' + condition, \
+        res = requests.get('https://my.demio.com/api/v1/report/' + str(i) + '/participants?status=' + condition,
                            headers=headers, timeout=5)
         t = res.json()
         result[i] = len(list(t.values())[0])

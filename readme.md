@@ -1,4 +1,4 @@
-## BigQuery.Analyitcs
+## BigQuery.Analytics
 
 ```student_courses```
  > Информация про всех студентов, оценки за проекты, начало менторства, началичие аккаунта в JAS

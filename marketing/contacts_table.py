@@ -21,9 +21,10 @@ cursor = conn.cursor(as_dict=True)
 
 def query():
     cursor.execute('''
-    SELECT case when amo_id is null then hs_object_id else amo_id end AS contact_id,
-           createdate AS created_at,
-           lastmodifieddate AS updated_at,
+    SELECT amo_id,
+           VId,
+           cast(createdate  AT TIME ZONE 'UTC' AT TIME ZONE 'Pacific Standard Time'  as datetime) AS created_at,
+           cast(lastmodifieddate  AT TIME ZONE 'UTC' AT TIME ZONE 'Pacific Standard Time'  as datetime) AS updated_at,
            o.hubspot_owner_id AS responsible_user_id,
            concat(c.firstname, ' ', c.lastname) AS name,
            phone,
@@ -36,13 +37,24 @@ def query():
                                            utm_medium AS contact_medium,
                                            utm_campaign AS contact_campaign,
                                            utm_content AS contact_content,
-                                           utm_term AS contact_term,
-            case when amo_id is null then 'hs' else 'amo' end AS crm
+                                           utm_term AS contact_term
     FROM Contact c
     LEFT JOIN OWNER o ON o.hubspot_owner_id = c.hubspot_owner_id  ''')
 
     data = cursor.fetchall()
     df = pd.DataFrame(data)
+
+    df_hs = df[~df.VId.isna()].drop(['amo_id'], axis = 1)
+    df_hs = df_hs.rename(columns={'VId':'contact_id'})
+    df_hs['crm'] = 'hs'
+
+    df_amo = df[~df.amo_id.isna()].drop(['VId'], axis = 1)
+    df_amo = df_amo.rename(columns={'amo_id':'contact_id'})
+    df_amo['crm'] = 'amo'
+
+    df = pd.concat([df_hs, df_amo]).sort_values(by = 'primary_email', ascending= True)\
+        .drop_duplicates(subset = ['contact_id', 'primary_email', 'crm'], keep = 'first')
+
     conn.close()
     return df
 

@@ -22,13 +22,13 @@ cursor = conn.cursor(as_dict=True)
 def query():
     cursor.execute('''
     select
-    d.createdate as date_created,
-    d.closedate as date_closed,
+    cast(d.createdate  AT TIME ZONE 'UTC' AT TIME ZONE 'Pacific Standard Time'  as datetime) as date_created,
+    cast(d.closedate  AT TIME ZONE 'UTC' AT TIME ZONE 'Pacific Standard Time'  as datetime) as date_closed,
     d.DealId as element_id,
     eda.VId  as contact_id,
     concat(c.firstname,' ', c.lastname) as name , --- тож самое что и deal в amo?
     o.hubspot_owner_id as responsible_user_id,
-    pipeline,
+    dp.PipelineLabel as pipeline,
     course,
     utm_source_lead as lead_source,
     utm_medium_lead as lead_medium,
@@ -46,7 +46,8 @@ def query():
     left join Owner o on o.hubspot_owner_id = d.hubspot_owner_id
     left join DealContactAssociations eda on eda.DealId = d.DealId
     left join Contact c on c.VId = eda.VId
-    where d.createdate >= '2022-07-06 13:00:00'  ''')
+    left join DealPipeline dp on dp.PipelineId = d.pipeline
+    where cast(d.createdate  AT TIME ZONE 'UTC' AT TIME ZONE 'Pacific Standard Time'  as datetime) >= '2022-07-06 13:00:00' ''')
 
     data = cursor.fetchall()
     df = pd.DataFrame(data)

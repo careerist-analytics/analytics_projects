@@ -21,8 +21,7 @@ cursor = conn.cursor(as_dict=True)
 
 def query():
     cursor.execute('''
-    SELECT hs_object_id AS contact_id,
-           amo_id,
+    SELECT case when amo_id is null then hs_object_id else amo_id end AS contact_id,
            createdate AS created_at,
            lastmodifieddate AS updated_at,
            o.hubspot_owner_id AS responsible_user_id,
@@ -37,7 +36,8 @@ def query():
                                            utm_medium AS contact_medium,
                                            utm_campaign AS contact_campaign,
                                            utm_content AS contact_content,
-                                           utm_term AS contact_term
+                                           utm_term AS contact_term,
+            case when amo_id is null then 'hs' else 'amo' end AS crm
     FROM Contact c
     LEFT JOIN OWNER o ON o.hubspot_owner_id = c.hubspot_owner_id  ''')
 
@@ -75,7 +75,7 @@ def transform(arg):
 def load(arg):
     client = bigquery.Client(project='fabled-sorter-289010')
     job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE", )
-    table = 'Renta_dataset.contacts'
+    table = 'Renta_dataset.full_contacts_data'
     job = client.load_table_from_dataframe(arg, table, job_config=job_config)
 
 

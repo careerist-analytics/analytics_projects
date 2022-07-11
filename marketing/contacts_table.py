@@ -19,6 +19,14 @@ conn = pymssql.connect(Server, Username, Password, Database)
 cursor = conn.cursor(as_dict=True)
 
 
+def delete_rows():
+    query = '''
+    DELETE FROM Renta_dataset.full_contacts_data
+    WHERE x = -1 '''
+    project_id = 'fabled-sorter-289010'
+    pd.read_gbq(query, project_id=project_id, credentials=credentials)
+
+
 def query():
     cursor.execute('''
     SELECT amo_id,
@@ -37,23 +45,24 @@ def query():
                                            utm_medium AS contact_medium,
                                            utm_campaign AS contact_campaign,
                                            utm_content AS contact_content,
-                                           utm_term AS contact_term
+                                           utm_term AS contact_term,
+                                           -1 as x
     FROM Contact c
     LEFT JOIN OWNER o ON o.hubspot_owner_id = c.hubspot_owner_id  ''')
 
     data = cursor.fetchall()
     df = pd.DataFrame(data)
 
-    df_hs = df[~df.VId.isna()].drop(['amo_id'], axis = 1)
-    df_hs = df_hs.rename(columns={'VId':'contact_id'})
+    df_hs = df[~df.VId.isna()].drop(['amo_id'], axis=1)
+    df_hs = df_hs.rename(columns={'VId': 'contact_id'})
     df_hs['crm'] = 'hs'
 
-    df_amo = df[~df.amo_id.isna()].drop(['VId'], axis = 1)
-    df_amo = df_amo.rename(columns={'amo_id':'contact_id'})
+    df_amo = df[~df.amo_id.isna()].drop(['VId'], axis=1)
+    df_amo = df_amo.rename(columns={'amo_id': 'contact_id'})
     df_amo['crm'] = 'amo'
 
-    df = pd.concat([df_hs, df_amo]).sort_values(by = 'primary_email', ascending= True)\
-        .drop_duplicates(subset = ['contact_id', 'primary_email', 'crm'], keep = 'first')
+    df = pd.concat([df_hs, df_amo]).sort_values(by='primary_email', ascending=True) \
+        .drop_duplicates(subset=['contact_id', 'primary_email', 'crm'], keep='first')
 
     conn.close()
     return df
@@ -86,10 +95,11 @@ def transform(arg):
 
 def load(arg):
     client = bigquery.Client(project='fabled-sorter-289010')
-    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE", )
+    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND", )
     table = 'Renta_dataset.full_contacts_data'
     job = client.load_table_from_dataframe(arg, table, job_config=job_config)
 
 
 if __name__ == "__main__":
+    delete_rows()
     load(transform(change_type(fill_missing_values(query()))))

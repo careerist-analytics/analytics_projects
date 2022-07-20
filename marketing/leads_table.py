@@ -41,7 +41,8 @@ def query():
     closed_lost_reason as loss_reason,
     contract_type as 'contract_type', --- или contract_type - тип контракта
     course_month as course_month,
-    'hs' as crm
+    'hs' as crm,
+    '-1' as tags
     from Deal d
     left join Owner o on o.hubspot_owner_id = d.hubspot_owner_id
     left join DealContactAssociations eda on eda.DealId = d.DealId
